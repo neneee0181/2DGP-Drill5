@@ -6,7 +6,7 @@ character = load_image('animation_sheet.png')
 
 
 def handle_events():
-    global running, dir_x, dir_y, facing
+    global running, dir_x, dir_y, facing, idle
 
     events = get_events()
     for event in events:
@@ -16,15 +16,19 @@ def handle_events():
             if event.key == SDLK_RIGHT:
                 dir_x = 1
                 facing = 0  # 오른쪽
+                idle = False
             elif event.key == SDLK_LEFT:
                 dir_x = -1
                 facing = 1  # 왼쪽
+                idle = False
             elif event.key == SDLK_UP:
                 dir_y = 1
                 facing = 2  # 위쪽
+                idle = False
             elif event.key == SDLK_DOWN:
                 dir_y = -1
                 facing = 3  # 아래쪽
+                idle = False
             elif event.key == SDLK_ESCAPE:
                 running = False
         elif event.type == SDL_KEYUP:
@@ -32,28 +36,42 @@ def handle_events():
                 dir_x = 0
             elif event.key in (SDLK_UP, SDLK_DOWN):
                 dir_y = 0
+            if dir_x == 0 and dir_y == 0:
+                idle = True
 
 
-def draw_character(frame, facing, x, y):
-    character.clip_draw(frame * 100, facing * 150, 100, 140, x, y)
+def draw_character(frame, facing, x, y, idle):
+    if idle:
+        if frame % 2 == 0:
+            character.clip_draw(0, 450, 100, 140, x, y)
+        else:
+            character.clip_draw(200, 450, 100, 140, x, y)
+    else:
+        character.clip_draw(frame * 100, facing * 150, 100, 140, x, y)
 
 
 running = True
 x, y = 800 // 2, 600 // 2
 frame = 0
 dir_x, dir_y = 0, 0
-facing = 2  # 초기 상태는 아래쪽을 바라보는 상태
+facing = 2
+idle = True
 
 while running:
     clear_canvas()
     grass.draw(400, 300, 800, 600)
 
-    # 방향에 맞는 스프라이트를 그린다
-    draw_character(frame if dir_x != 0 or dir_y != 0 else 0, facing, x, y)
+    draw_character(frame if not idle else (frame % 2), facing, x, y, idle)
 
     update_canvas()
     handle_events()
-    frame = (frame + 1) % 4
+
+    if dir_x != 0 or dir_y != 0:
+        frame = (frame + 1) % 4
+        idle = False
+    else:
+        frame = (frame + 1) % 2
+
     x += dir_x * 5
     y += dir_y * 5
     delay(0.05)
